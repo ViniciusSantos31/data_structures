@@ -1,5 +1,8 @@
 #include "hash.h"
 
+static int words_in_text = 0;
+static int wrong_words = 0;
+
 unsigned int Hash(char* word) {
 
     int size = strlen(word);
@@ -15,20 +18,103 @@ unsigned int Hash(char* word) {
 	return value;
 }
 
-void InitHash(HashTable h) {
+void InitHashTable(HashTable h) {
 
-    int i;
+    unsigned int i;
 
-    for (i = 0; i < length; i++)
-    {
+    for (i = 0; i < length; ++i)
         h[i] = NULL;
-    }
 
 }
+
 void LoadDictionary(HashTable h) {
 
-	FILE* f = fopen("asciiii.txt", "r");
-    char teste[60];
+	FILE* f = fopen("ascii.txt", "r");
+    char teste[words];
+	
+	char* p1 = NULL;
+
+	if(f == NULL) {
+
+		fprintf(stderr, "failed to open input.\n");
+
+	}else{
+        
+        while(fscanf(f, "%s", teste) != EOF){
+
+			int tam = strlen(teste) + 1;
+				
+			p1 = malloc(sizeof(char) * tam);
+
+			strcpy(p1, teste);
+
+            ChainedInsert(h, p1);
+
+		}
+		
+	}
+
+	fclose(f);
+
+	printf("=======================================================\n");
+
+}
+
+void ChainedInsert(HashTable h, char* word) {
+
+	int index = (Hash(word) % length);
+
+    struct Sll* list = NULL;
+
+    if(h[index] == NULL) {
+
+		list = CreateNode();
+
+		h[index] = list;
+		
+		Prepend(list, word);
+
+	}else {
+
+		list = h[index];
+		
+		Prepend(list, word);
+
+	}
+
+}
+
+int ChainedSearch(HashTable h, char* word) {
+	
+	int index = (Hash(word) % length);
+
+	if(h[index] != NULL) {
+
+		const struct Sll* list = h[index];
+
+		const struct Node* aux = list->head;
+
+		while (aux != NULL) {
+
+			if((strcmp(aux->word, word)) == 0) {
+				
+				return 1;
+			}
+			
+			aux = aux->next;
+
+		}
+
+	}
+
+	return 0;
+
+}
+
+void DestroyHashTable(HashTable h) {
+
+	FILE* f = fopen("ascii.txt", "r");
+    char teste[words];
 
 	if(f == NULL) {
 
@@ -36,160 +122,139 @@ void LoadDictionary(HashTable h) {
 
 	}else{
 
-        //printf("Upload Complete.\n");
-        while(fscanf(f, "%s ", teste) != EOF){ // le o arquivo do dicionario;
+		char* p1 = NULL;
+        
+        while(fscanf(f, "%s", teste) != EOF){
 
-            ChainedInsert(h, teste); //Chama Funccao que calcula o hash e inseri na table
+			int tam = strlen(teste) + 1;
+				
+			p1 = malloc(sizeof(char) * tam);
 
-        }
+			strcpy(p1, teste);
+
+            EndProgram(h, p1);
+
+			free(p1);
+
+		}
+	
 	}
+
 	fclose(f);
-}
-
-void ChainedInsert(HashTable h, char* word) {
-
-	unsigned int index = (Hash(word) % length);
-
-    struct Sll* lista = CreateNode();
-
-    if(h[index] == NULL) {
-
-		//printf("Inseriu, %s\n", word);
-
-		h[index] = lista;
-
-		//strcpy(h[index]->table, word);
-		Prepend(lista, word);
-		
-		//printf("teste\n");
-
-
-	}else {
-        //printf("Inseriu else, %s\n", word);
-
-		lista = h[index];
-
-		//strcpy(h[index]->table, word);
-
-		Prepend(lista, word);
-
-
-
-	}
-	//printf("hash word, [%d]\n", Hash(word)% length);
 
 }
 
-int ChainedSearch(HashTable h, char* word) {
+void EndProgram(HashTable h, char* word) {
 
 	int index = (Hash(word) % length);
 
 	if(h[index] != NULL) {
 
-		printf("entrou no if\n");
-
 		struct Sll* list = h[index];
 
-		struct Node* aux = list->head;
+		DestroyList(list);
+		h[index] = NULL;
 
-		while (aux != NULL) {
+	}
 
-			printf("Entrou no while\n");
-			printf("%s, %s\n", aux->word, word);
-
-			if((strcmp(aux->word, word)) == 0) {
-
-				printf("encontrou.\n");
-
-				return 1;
-
-			}else {
-
-				if (aux == NULL){
-					
-					wrong_w(word);
-					printf("Palavra não encontrada!\n");
-				}
-
-			}
-
-			aux = aux->next;
-		}
-	} 
-
-	
-
-	return 0;
 }
 
-void wrong_w(char* word){
-
-	FILE* f = fopen("wrong_words.txt", "w");
-
-	fprintf(f, "%s", word);
-
-	fclose(f);
-	
-}
-
-/*void PrintHashTable(HashTable h) {
+void PrintHashTable(HashTable h) {
 
 	int i;
 
 	for(i = 0; i < length; ++i) {
 
 		struct Sll* list = h[i];
-		struct Node* aux = list->head;
 
-		if(aux != NULL) {
+		if(list != NULL) {
 
-			while(aux != NULL) {
-
-				printf("table[%i] = %s\n", i, aux->word);
-
-				aux = aux->next;
-
-			}
-		}
+			PrintList(list, i);
+        }
 	}
-
-}*/
-
-
-void Results() {
-
-	printf("Numero total de palavras do texto: \n");
-	printf("Tempo total da verificao: \n");
-	printf("Numero de palavras que falharam no spell check: \n");
-	printf("Lista de palavras que falham no spell check: \n");
-
-	printf("Num.   Ocorrencia  -  Palavra\n");
-	printf("-------------------------------\n");
 
 }
 
-void TestHashTable(HashTable h) { //Função para teste
+void Searching(HashTable h, char* file) {
 
-    int i;
-	char exp[words];
+	char teste[words];
+	char* results;
+	char* token;
 
-    for (i = 0; i < 3; i++)
-    {
-        printf("palavra[%i] = ", i);
-        scanf("%s", exp);
+	struct Sll* list = CreateNode();
 
-        ChainedInsert(h, exp);
-    }
+	FILE* resultado = fopen("resultado.txt", "w");
 
-    printf("===================\n");
+	double tempo;
 
-    for(i = 0; i < 3; ++i) {
+	clock_t t0, tf;
 
-        printf("palavra[%i] = ", i);
-        scanf("%s", exp);
+	FILE* p = fopen(file, "r");
 
-        ChainedSearch(h, exp);
+	if(p == NULL) {
 
-    }
+		fprintf(stderr, "failed to open input.\n");
+
+		fclose(p);
+
+	}else {
+
+		t0 = clock();
+		
+		while(!feof(p)) {
+
+			results = fgets(teste, sizeof(teste), p);
+			
+			token = strtok(results," -,.!'\n'");
+
+			while(token != NULL) {
+
+				int flag = ChainedSearch(h, token);
+
+				++words_in_text;
+
+				if(flag == 0) {
+
+					++wrong_words;
+					
+					WrongWords(list, token);
+				}
+
+				token = strtok(NULL," -,.!'\n'"); 
+	
+			}
+
+		}
+
+		tf = clock();
+
+	}
+
+	fclose(p);
+
+	tempo = ((double) (tf - t0)) / (CLOCKS_PER_SEC/1000);
+
+	fprintf(resultado, "Numero total de palavras do texto: %i\n", words_in_text);
+	fprintf(resultado, "Tempo total de verificacao: %lf ms\n", tempo);
+	fprintf(resultado, "Numero de palavras que falharam no spell checker: %i\n", wrong_words);
+	fprintf(resultado, "lista de palavras que falharam\n");
+	fprintf(resultado, "Num. Ocorrencia - Palavra\n");
+
+	struct Node* aux = list->head;
+
+	int k = 1;
+
+	for(int i = 0; i < list->size; ++i) {
+
+		while(aux != NULL) {
+		
+			fprintf(resultado, "%i. %s\n", k, aux->palavra);
+			aux = aux->next;
+			++k;
+		}
+
+	}
+
+	DestroyList(list);
 
 }
