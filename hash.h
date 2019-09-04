@@ -1,12 +1,11 @@
-#pragma once
+#ifndef HASH_H
+#define HASH_H
 
 #include "sll.h"
 
-
-
 typedef struct Sll* HashTable[length];
 
-void InitHash(HashTable h);
+void InitHashTable(HashTable h);
 
 unsigned int Hash(char* word);
 
@@ -16,10 +15,12 @@ int ChainedSearch(HashTable h, char* word);
 
 void LoadDictionary(HashTable h);
 
+void Searching(HashTable h, char* file);
+
 void PrintHashTable(HashTable h);
 
-void TestHashTable(HashTable h);
+void DestroyHashTable(HashTable h);
 
-void wrong_w(char* word);
+void EndProgram(HashTable h, char* word);
 
-void Results();
+#endif // HASH_H
